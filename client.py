@@ -7,8 +7,6 @@ import json
 import os
 import sys
 
-
-
 def register(url):
 	#data = {'port':port}
 	url = url + "/register"
