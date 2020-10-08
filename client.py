@@ -62,7 +62,7 @@ def change_conf(client,ip,port):
 	f = open("/root/"+client)
 	#print(f.read()[25:50])
 	s = f.read().split('\n')
-	s[3] = "remote " + ip + " address " + port
+	s[3] = "remote " + ip + port
 	f = open("/root/"+client,'w')
 	f.write('\n'.join(s))
 	f.close()
