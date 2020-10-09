@@ -1,17 +1,15 @@
 import requests
 import socket
 import base64
-import ast
 import datetime
 import json
 import os
 import sys
 import http.client
 
-#Interaction with server#
+#Interaction with server
 
 def register(url):
-	#data = {'port':port}
 	url = url + "/register"
 	res = requests.post(url)
 	selfvpn_conf = open('selfvpn.conf','w')
@@ -51,7 +49,7 @@ def update(url,client):
 	client_ovpn.close()
 	selfvpn_conf.close()
 
-#Changing config files#
+#Changing config files
 
 def addconf(client):
 	client += ".ovpn"
@@ -91,12 +89,12 @@ def chahge_port(client,port):
 	f.write(" ".join(s))
 	f.close()
 
-#Secondary functions#
+#Secondary functions
 
 def encode(s):
-	s_bytes = s.encode('ascii')
+	s_bytes = s.encode("ascii")
 	base64_bytes = base64.b64encode(s_bytes)
-	base64_msg = base64_bytes.decode('ascii')
+	base64_msg = base64_bytes.decode("ascii")
 	return base64_msg
 
 
@@ -143,8 +141,3 @@ while(True):
 		push(url,port_in_my_config)
 		update(url,client)
 
-		
-#что за конфиг берет гет
-#насколько тяжелые функции open and read
-
-#каждые н минут 
