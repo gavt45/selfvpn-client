@@ -133,7 +133,7 @@ while(True):
 	client_ovpn.close()
 	selfvpn_conf.close()
 
-	ip = "22.2.2.2"#get_ip()
+	ip = get_ip()
 	ip_in_my_config = s_self["ip"]
 	ip_in_config = s_cli.split()[6]
 
