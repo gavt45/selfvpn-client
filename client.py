@@ -6,34 +6,92 @@ import datetime
 import json
 import os
 import sys
+import http.client
+
+#Interaction with server#
 
 def register(url):
 	#data = {'port':port}
 	url = url + "/register"
 	res = requests.post(url)
-	g = open('selfvpn.conf','w')
+	selfvpn_conf = open('selfvpn.conf','w')
 
 	if res.json()['code'] == 0:
 		print("You autorized",file=sys.stdout)
-		g.write(json.dumps(res.json()))
-		#print(res.json())
+		selfvpn_conf.write(json.dumps({"uid":res.json()["uid"],"token":res.json()["token"]}))
 	else:
 		print(res.json()['msg']['name']+': ' + res.json()['msg']['description'],file=sys.stderr)
-	g.close()
+	selfvpn_conf.close()
 
 
 def push(url,port):
-	g = open('selfvpn.conf')
-	a = json.loads(g.read())
+	selfvpn_conf = open('selfvpn.conf')
+	dictt = json.loads(g.read())
 	data = {
-		'uid':a['uid'],
-		'token':a['token'],
-		'port':port
+		"uid":dictt["uid"],
+		"token":dictt["token"],
+		"port":port
 	}
 	url = url + "/push"
 	res = requests.post(url,data=data)
-	g.close()
+	selfvpn_conf.close()
 
+
+def update(url,client):
+	client_ovpn = open("/root/"+client+".ovpn")
+	selfvpn_conf = open("~/selfvpn.conf")
+	dictt = json.loads(selfvpn_conf.read())
+	data = {
+		"uid":dictt["uid"],
+		"token":dictt["token"],
+		"config":encode(client_ovpn.read())
+	}
+	url = url + "/update"
+	res = requests.post(url,data=data)
+	client_ovpn.close()
+	selfvpn_conf.close()
+
+#Changing config files#
+
+def addconf(client):
+	client += ".ovpn"
+	client_ovpn = open("/root/"+client)
+	selfvpn_conf = open("~/selfvpn.conf")
+
+	s = client_ovpn.read()
+	port = s.split()[8]
+	ip_in_config = s.split()[6]
+	dictt = json.loads(selfvpn_conf.read())
+	dictt.update({"ip":ip_in_config,"port":port})
+	selfvpn_conf.close()
+
+	selfvpn_conf = open("selfvpn.conf","w")
+	selfvpn_conf.write(json.dumps(dictt))
+
+	client_ovpn.close()
+	selfvpn_conf.close()
+
+
+def change_ip(client,ip):
+	f = open("/root/"+client+".ovpn")
+	s = f.read().split()
+	f.close()
+	s[6] = ip
+	f = open("/root/"+client,"w")
+	f.write(" ".join(s))
+	f.close()
+
+
+def chahge_port(client,port):
+	f = open("/root/"+client+".ovpn")
+	s = f.read().split()
+	f.close()
+	s[8] = port
+	f = open("/root/"+client,"w")
+	f.write(" ".join(s))
+	f.close()
+
+#Secondary functions#
 
 def encode(s):
 	s_bytes = s.encode('ascii')
@@ -42,81 +100,48 @@ def encode(s):
 	return base64_msg
 
 
-def addconf(client):
-	client += ".ovpn"
-	f = open("/root/"+client)
-	s = f.read()
-	base64_msg = encode(s)
-	g = open('selfvpn.conf')
-	a = json.loads(g.read())
-	a.update({'config':base64_msg})
-	g.close()
-	g = open('selfvpn.conf','w')
-	g.write(json.dumps(a))
-	f.close()
-	g.close()
-
-
-def change_conf(client,ip,port):
-	client += ".ovpn"
-	f = open("/root/"+client)
-	#print(f.read()[25:50])
-	s = f.read().split('\n')
-	s[3] = "remote " + ip+ " " + port
-	f = open("/root/"+client,'w')
-	f.write('\n'.join(s))
-	f.close()
-
-
-def update(url):
-	g = open('selfvpn.conf')
-	a = json.loads(g.read())
-	data = {
-		'uid':a['uid'],
-		'token':a['token'],
-		'config':a['config']
-	}
-	url = url + "/update"
-	res = requests.post(url,data=data)
-	g.close()
-
+def get_ip():
+	conn = http.client.HTTPConnection("ifconfig.me")
+	conn.request("GET", "/ip")
+	ip = str(conn.getresponse().read())[2:-1]
+	return ip
 
 url = "http://127.0.0.1:5000"
 client = "client"
-#ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")] or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) + ["no IP found"])[0]
-#port = input('input your forwarding port\n')
 
-if not os.path.exists("selfvpn.conf"):
-	ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")] or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) + ["no IP found"])[0]
-	port = input('input your forwarding port\n')
+if not os.path.exists("~/selfvpn.conf"):
+	ip = get_ip()
+	port = input("input your forwarding port\n")
 	register(url)
-	change_conf(client,ip,port)
+	change_ip(client,ip)
+	change_port(client,port)
 	addconf(client)
 	print("regiter ok")
 
 while(True):
 
-	f = open("/root/"+client+".ovpn")
-	g = open("selfvpn.conf")
+	client_ovpn = open("/root/"+client+".ovpn")
+	selfvpn_conf = open("selfvpn.conf")
 
-	sf = f.read()
-	base64_msg = encode(sf)
-	sg =  json.loads(g.read())
+	s_cli = client_ovpn.read()
+	s_self = json.loads(selfvpn_conf.read())
 
-	f.close()
-	g.close()
+	client_ovpn.close()
+	selfvpn_conf.close()
 
-	ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")] or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) + ["no IP found"])[0]
-	port = sf.split()[8]
-	ip_in_config = sf.split()[6]
+	ip = get_ip()
+	ip_in_my_config = s_self["ip"]
+	ip_in_config = s_cli.split()[6]
+	port_in_my_config = s_self["port"]
+	port_in_config = s_cli.split()[8]
 
 	if ip != ip_in_config:
-		change_conf(client,ip,port)
+		change_ip(client,ip)
 
-	if base64_msg != sg['config']:
+	if ip_in_config != ip_in_my_config or port_in_config != port_in_my_config:
 		addconf(client)
-		push(url,port)
-		update(url)
+		push(url,port_in_my_config)
+		update(url,client)
 
 		
 #что за конфиг берет гет
