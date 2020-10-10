@@ -19,11 +19,12 @@ def register(url):
 		selfvpn_conf.write(json.dumps({"uid":res.json()["uid"],"token":res.json()["token"],"ip":"","port":""}))
 	else:
 		print(res.json()['msg']['name']+': ' + res.json()['msg']['description'],file=sys.stderr)
+	
 	selfvpn_conf.close()
 
 
 def push(url,s_self):
-	dictt = s_self
+	dictt = json.loads(s_self)
 	data = {
 		"uid":dictt["uid"],
 		"token":dictt["token"],
@@ -34,14 +35,15 @@ def push(url,s_self):
 
 
 def update(url,client,s_cli,s_self):
-	dictt = s_self
+	dictt = json.loads(s_self)
 	data = {
 		"uid":dictt["uid"],
 		"token":dictt["token"],
 		"config":encode(s_cli)
 	}
 	url = url + "/update"
-	res = requests.post(url,data=data)
+	res = requests.post(url,data=data)	
+	
 
 #Changing config files
 
@@ -49,7 +51,7 @@ def addconf(client,s_cli,s_self):
 	s = s_cli
 	port_in_config = s.split()[7]
 	ip_in_config = s.split()[6]
-	dictt = s_self
+	dictt = json.loads(s_self)
 	dictt["ip"] = ip_in_config
 	dictt["port"] = port_in_config
 
@@ -128,16 +130,16 @@ while(True):
 	selfvpn_conf = open("../selfvpn.conf")
 
 	s_cli = client_ovpn.read()
-	s_self = json.loads(selfvpn_conf.read())
+	s_self = selfvpn_conf.read()
 
 	client_ovpn.close()
 	selfvpn_conf.close()
 
 	ip = get_ip()
-	ip_in_my_config = s_self["ip"]
+	ip_in_my_config = json.loads(s_self)["ip"]
 	ip_in_config = s_cli.split()[6]
 
-	port_in_my_config = s_self["port"]
+	port_in_my_config = json.loads(s_self)["port"]
 	port_in_config = s_cli.split()[7]
 
 	if ip != ip_in_config:
