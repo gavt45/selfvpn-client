@@ -69,24 +69,7 @@ def changeconf(client,ip,port,s_cli):
 	f.close()
 	return s
 
-'''
-def change_ip(client,ip,s_cli):
-	s = s_cli.split(" ")
-	s[6] = ip
-	f = open("/root/"+client+".ovpn","w")
 
-	f.write(" ".join(s))
-	f.close()
-
-
-def change_port(client,port,s_cli):
-	s = s_cli.split(" ")
-	s[7] = ""
-	s[8] = port
-	f = open("/root/"+client+".ovpn","w")
-	f.write(" ".join(s))
-	f.close()
-'''
 #Secondary functions
 
 def encode(s):
