@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import requests
 import socket
 import base64
@@ -6,19 +8,21 @@ import json
 import os
 import sys
 import http.client
-
+import portforwardlib
 #Interaction with server
 
 def register(url):
-	url = url + "/register"
+	url = "{}/register".format(url)
 	res = requests.post(url)
-	selfvpn_conf = open("../selfvpn.conf","w")
+	dictt = res.json()
+	selfvpn_conf = open("/root/selfvpn.conf","w")
 
-	if res.json()['code'] == 0:
+	if dictt["code"] == 0:
 		print("You autorized",file=sys.stdout)
-		selfvpn_conf.write(json.dumps({"uid":res.json()["uid"],"token":res.json()["token"],"ip":"","port":""}))
+		selfvpn_conf.write(json.dumps({"uid":dictt["uid"],"token":dictt["token"],"ip":"","port":""}))
 	else:
-		print(res.json()['msg']['name']+': ' + res.json()['msg']['description'],file=sys.stderr)
+		print(f"{dictt['msg']['name']}: {dictt['msg']['description']}",file=sys.stderr)
+		#print(res.json()["msg"]["name"]+": " + res.json()["msg"]["description"],file=sys.stderr)
 	
 	selfvpn_conf.close()
 
@@ -30,9 +34,12 @@ def push(url,s_self):
 		"token":dictt["token"],
 		"port":dictt["port"]
 	}
-	url = url + "/push"
+	url = "{}/push".format(url)
 	res = requests.post(url,data=data)
-
+	#if res.json()["code"] != 0:
+		#print(res.json())
+		#print(f"{res.json()['msg']['name']}: {res.json()['msg']['description']}",file=sys.stderr)
+	
 
 def update(url,client,s_cli,s_self):
 	dictt = json.loads(s_self)
@@ -41,11 +48,27 @@ def update(url,client,s_cli,s_self):
 		"token":dictt["token"],
 		"config":encode(s_cli)
 	}
-	url = url + "/update"
-	res = requests.post(url,data=data)	
-	
+	url = "{}/update".format(url)
+	res = requests.post(url,data=data)
+	#if res.json()["code"] != 0:
+		#print(res.json())
+		#print(f"{res.json()['msg']['name']}: {res.json()['msg']['description']}",file=sys.stderr)
+
 
 #Changing config files
+
+def login():
+	f_read = open("/var/log/syslog")
+	last_line = f_read.readlines()[-1]
+	if last_line != last:
+		if "client-instance restarting" in last_line:
+			return False
+		elif "initialized with 256 bit key" in last_line:
+			return True
+
+		last = last_line
+	f_read.close()
+
 
 def addconf(client,s_cli,s_self):
 	s = s_cli
@@ -55,15 +78,15 @@ def addconf(client,s_cli,s_self):
 	dictt["ip"] = ip_in_config
 	dictt["port"] = port_in_config
 
-	selfvpn_conf = open("../selfvpn.conf","w")
+	selfvpn_conf = open("/root/selfvpn.conf","w")
 	selfvpn_conf.write(json.dumps(dictt))
 	selfvpn_conf.close()
 
 
 def changeconf(client,ip,port,s_cli):
 	s = s_cli.split("\n")
-	s[3] = "remote " + ip + " " + port
-	f = open("/root/"+client+".ovpn","w")
+	s[3] = "remote {} {}".format(ip,port)
+	f = open("/root/{}.ovpn".format(client),"w")
 	s  = "\n".join(s)
 	f.write(s)
 	f.close()
@@ -85,51 +108,75 @@ def get_ip():
 	ip = str(conn.getresponse().read())[2:-1]
 	return ip
 
-url = "http://127.0.0.1:5000"
+url = "http://10.0.2.4:5000"
 client = "client"
+log_status = "logout" #False - pass, True - switch status
 
-if not os.path.exists("../selfvpn.conf"):
-	ip = get_ip()
-	port = input("input your forwarding port\n")
-	register(url)
+#First start
+if not os.path.exists("/root/selfvpn.conf"):
 
-	client_ovpn = open("/root/"+client+".ovpn")
-	selfvpn_conf = open("../selfvpn.conf")
+	client_ovpn = open(f"/root/{client}.ovpn")
+	selfvpn_conf = open("/root/selfvpn.conf")
 
 	s_cli = client_ovpn.read()
 	s_self = selfvpn_conf.read()
 
 	client_ovpn.close()
 	selfvpn_conf.close()
+
+	ip = get_ip()
+	while True:
+		port = input("input your forwarding port(if you aren't behind the NAT print no): ")
+		if(port == "none" or port >= "0" and port < "65536" ):
+			if port == "none":
+				port = 1194
+			else:
+				port = int(port)
+				proto = s_cli.split()[4]
+				res = portforwardlib.forwardPort(port,1194,None,None,True,proto,0,"selfvpn service",True)
+		break
+
+	register(url)
 
 	s_cli = changeconf(client,ip,port,s_cli)
 	addconf(client,s_cli,s_self)
-
+	push(url,s_self)
+	update(url,client,s_cli,s_self)
 	print("regiter ok")
+	
+#Daemon
+else:
+	while(True):
 
-while(True):
+		client_ovpn = open("/root/{}.ovpn".format(client))
+		selfvpn_conf = open("/root/selfvpn.conf")
 
-	client_ovpn = open("/root/"+client+".ovpn")
-	selfvpn_conf = open("../selfvpn.conf")
+		s_cli = client_ovpn.read()
+		s_self = selfvpn_conf.read()
 
-	s_cli = client_ovpn.read()
-	s_self = selfvpn_conf.read()
+		client_ovpn.close()
+		selfvpn_conf.close()
 
-	client_ovpn.close()
-	selfvpn_conf.close()
+		ip = get_ip()
+		ip_in_my_config = json.loads(s_self)["ip"]
+		ip_in_config = s_cli.split()[6]
 
-	ip = get_ip()
-	ip_in_my_config = json.loads(s_self)["ip"]
-	ip_in_config = s_cli.split()[6]
+		port_in_my_config = json.loads(s_self)["port"]
+		port_in_config = s_cli.split()[7]
 
-	port_in_my_config = json.loads(s_self)["port"]
-	port_in_config = s_cli.split()[7]
+		if ip != ip_in_config:
+			changeconf(client,ip,port_in_config,s_cli)
 
-	if ip != ip_in_config:
-		changeconf(client,ip,port_in_config,s_cli)
+		if ip_in_config != ip_in_my_config or port_in_config != port_in_my_config:
+			addconf(client,s_cli,s_self)
+			push(url,s_self)
+			update(url,client,s_cli,s_self)
 
-	if ip_in_config != ip_in_my_config or port_in_config != port_in_my_config:
-		addconf(client,s_cli,s_self)
-		push(url,s_self)
-		update(url,client,s_cli,s_self)
+		if login() and log_status == "logout":
+			log_status = "login"
+		elif not login() and log_status == "login":
+			log_status = "logout"
+			os.system("echo '2\n1\ny\n' |./openvpn-install.sh")
+			os.system("echo '1\nclient\n' | ./openvpn-install.sh")
+			update(url,client,s_cli,s_self)
 
