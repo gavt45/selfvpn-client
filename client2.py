@@ -33,12 +33,10 @@ if not os.path.exists("/root/client.conf"):
 	#f = open("/root/client.ovpn")#None
 	res = get(url)
 	base64_msg = res.json()
-	'''
 	base64_bytes = base64_msg.encode("ascii")
 	config_bytes = base64.b64decode(base64_bytes)
-	config = config_bytes.decode("ascii")'''
+	config = config_bytes.decode("ascii")
 	#f.close()#None
-	print(base64_msg)
 	f = open("/root/client.conf","w")
 	f.write(config)
 	f.close()

@@ -6,6 +6,7 @@ import base64
 import datetime
 import json
 import os
+import subprocess
 import sys
 import http.client
 import portforwardlib
@@ -126,9 +127,9 @@ if not os.path.exists("/root/selfvpn.conf"):
 
 	ip = get_ip()
 	while True:
-		port = input("input your forwarding port(if you aren't behind the NAT print no): ")
-		if(port == "none" or port >= "0" and port < "65536" ):
-			if port == "none":
+		port = input("input your forwarding port(if you aren't behind the NAT print n): ")
+		if(port == "n" or port >= "0" and port < "65536" ):
+			if port == "n":
 				port = 1194
 			else:
 				port = int(port)
@@ -176,7 +177,6 @@ else:
 			log_status = "login"
 		elif not login() and log_status == "login":
 			log_status = "logout"
-			os.system("echo '2\n1\ny\n' |./openvpn-install.sh")
-			os.system("echo '1\nclient\n' | ./openvpn-install.sh")
+			subprocess.run(["sudo", "./starter.sh", "--switch"], stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 			update(url,client,s_cli,s_self)
 
