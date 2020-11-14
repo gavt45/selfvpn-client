@@ -10,6 +10,7 @@ import subprocess
 import sys
 import http.client
 import portforwardlib
+
 #Interaction with server
 
 def register(url):
@@ -59,6 +60,7 @@ def update(url,client,s_cli,s_self):
 #Changing config files
 
 def login():
+	global last
 	f_read = open("/var/log/syslog")
 	last_line = f_read.readlines()[-1]
 	if last_line != last:
@@ -66,7 +68,6 @@ def login():
 			return False
 		elif "initialized with 256 bit key" in last_line:
 			return True
-
 		last = last_line
 	f_read.close()
 
@@ -112,18 +113,19 @@ def get_ip():
 url = "http://10.0.2.4:5000"
 client = "client"
 log_status = "logout" #False - pass, True - switch status
+last = ""
 
 #First start
 if not os.path.exists("/root/selfvpn.conf"):
 
 	client_ovpn = open(f"/root/{client}.ovpn")
-	selfvpn_conf = open("/root/selfvpn.conf")
+	#selfvpn_conf = open("/root/selfvpn.conf")
 
 	s_cli = client_ovpn.read()
-	s_self = selfvpn_conf.read()
+	#s_self = selfvpn_conf.read()
 
 	client_ovpn.close()
-	selfvpn_conf.close()
+	#selfvpn_conf.close()
 
 	ip = get_ip()
 	while True:
@@ -138,6 +140,10 @@ if not os.path.exists("/root/selfvpn.conf"):
 		break
 
 	register(url)
+
+	selfvpn_conf = open("/root/selfvpn.conf")
+	s_self = selfvpn_conf.read()
+	selfvpn_conf.close()
 
 	s_cli = changeconf(client,ip,port,s_cli)
 	addconf(client,s_cli,s_self)
@@ -173,7 +179,7 @@ else:
 			push(url,s_self)
 			update(url,client,s_cli,s_self)
 
-		if login() and log_status == "logout":
+		if login() and (log_status == "logout"):
 			log_status = "login"
 		elif not login() and log_status == "login":
 			log_status = "logout"
