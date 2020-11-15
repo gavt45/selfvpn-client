@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import requests
 import json
 import base64
@@ -32,7 +34,7 @@ url = "http://10.0.2.4:5000"
 if not os.path.exists("/root/client.conf"):
 	#f = open("/root/client.ovpn")#None
 	res = get(url)
-	base64_msg = res.json()
+	base64_msg = res.json()["config"]
 	base64_bytes = base64_msg.encode("ascii")
 	config_bytes = base64.b64decode(base64_bytes)
 	config = config_bytes.decode("ascii")
