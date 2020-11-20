@@ -110,7 +110,7 @@ def get_ip():
 	ip = str(conn.getresponse().read())[2:-1]
 	return ip
 
-url = "http://10.0.2.4:5000"
+url = "http://10.0.2.7:5000"
 client = "client"
 log_status = "logout" #False - pass, True - switch status
 last = ""
@@ -176,10 +176,12 @@ else:
 
 		if ip_in_config != ip_in_my_config or port_in_config != port_in_my_config:
 			addconf(client,s_cli,s_self)
+			proto = s_cli.split()[4]
+			res = portforwardlib.forwardPort(port_in_config,1194,None,None,True,proto,0,"selfvpn service",True)
 			push(url,s_self)
 			update(url,client,s_cli,s_self)
 
-		if login() and (log_status == "logout"):
+		if login() and log_status == "logout":
 			log_status = "login"
 		elif not login() and log_status == "login":
 			log_status = "logout"

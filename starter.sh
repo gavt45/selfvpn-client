@@ -20,7 +20,7 @@ sudo ./myopenvpn-install.sh
 sed -i "s/10 120/5 10/" /etc/openvpn/server/server.conf
 
 echo "[Unit]
-Description=auto
+Description=selfvpn-service
 After=network.target
 
 [Service]
