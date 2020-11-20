@@ -83,6 +83,8 @@ def addconf(client,s_cli,s_self):
 	selfvpn_conf = open("/root/selfvpn.conf","w")
 	selfvpn_conf.write(json.dumps(dictt))
 	selfvpn_conf.close()
+	
+	#return s
 
 
 def changeconf(client,ip,port,s_cli):
@@ -118,7 +120,7 @@ last = ""
 #First start
 if not os.path.exists("/root/selfvpn.conf"):
 
-	client_ovpn = open(f"/root/{client}.ovpn")
+	client_ovpn = open("/root/{}.ovpn".format(client))
 	#selfvpn_conf = open("/root/selfvpn.conf")
 
 	s_cli = client_ovpn.read()
@@ -128,6 +130,7 @@ if not os.path.exists("/root/selfvpn.conf"):
 	#selfvpn_conf.close()
 
 	ip = get_ip()
+	'''
 	while True:
 		port = input("input your forwarding port(if you aren't behind the NAT print n): ")
 		if(port == "n" or port >= "0" and port < "65536" ):
@@ -138,7 +141,8 @@ if not os.path.exists("/root/selfvpn.conf"):
 				proto = s_cli.split()[4]
 				res = portforwardlib.forwardPort(port,1194,None,None,True,proto,0,"selfvpn service",True)
 		break
-
+		'''
+	port = 1194
 	register(url)
 
 	selfvpn_conf = open("/root/selfvpn.conf")
@@ -147,6 +151,9 @@ if not os.path.exists("/root/selfvpn.conf"):
 
 	s_cli = changeconf(client,ip,port,s_cli)
 	addconf(client,s_cli,s_self)
+	selfvpn_conf = open("/root/selfvpn.conf")
+	s_self = selfvpn_conf.read()
+	selfvpn_conf.close()
 	push(url,s_self)
 	update(url,client,s_cli,s_self)
 	print("regiter ok")
