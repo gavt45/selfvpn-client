@@ -10,6 +10,7 @@ import subprocess
 import sys
 import http.client
 import portforwardlib
+from time import sleep
 
 #Interaction with server
 
@@ -194,4 +195,4 @@ else:
 			log_status = "logout"
 			subprocess.run(["sudo", "./starter.sh", "--switch"], stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 			update(url,client,s_cli,s_self)
-
+		sleep(1)
