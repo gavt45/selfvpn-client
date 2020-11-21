@@ -17,9 +17,9 @@ sudo ./myopenvpn-install.sh
 
 ##############################################################
 
-sed -i "s/10 120/5 10/" /etc/openvpn/server/server.conf
+sudo sed -i "s/keepalive 10 120/keepalive 5 10/" /etc/openvpn/server/server.conf
 
-echo "[Unit]
+sudo echo "[Unit]
 Description=selfvpn-service
 After=network.target
 
