@@ -22,12 +22,15 @@ sed -i "s/10 120/5 10/" /etc/openvpn/server/server.conf
 echo "[Unit]
 Description=selfvpn-service
 After=network.target
+StartLimitBurst=5
+StartLimitIntervalSec=10
 
 [Service]
 User=root
 Type=simple
 ExecStart=/home/$username/selfvpn-client/client.py
 Restart=always
+RestartSec=1
 
 [Install]
 WantedBy=multi-user.target" > selfvpn.service
@@ -39,12 +42,14 @@ sudo python3 client.py
 
 k=$?
 
-#if [ $k > 0 ]; then
-#echo "Repair python then do these command:"
-#echo "sudo python3 client.py"
-#echo "sudo systemctl daemon-reload"
-#echo "sudo systemctl start selfvpn.service"
-#echo "sudo systemctl enable selfvpn.service"
+if [ $k > 0 ]; then
+echo $k
+echo "Repair python then do these command:"
+echo "sudo python3 client.py"
+echo "sudo systemctl daemon-reload"
+echo "sudo systemctl start selfvpn.service"
+echo "sudo systemctl enable selfvpn.service"
+fi
 #else
 sudo systemctl daemon-reload
 sudo systemctl start selfvpn.service
