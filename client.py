@@ -10,7 +10,10 @@ import subprocess
 import sys
 import http.client
 import portforwardlib
+<<<<<<< HEAD
 from traceback import format_exc
+=======
+>>>>>>> 26df144ea7db2b66ab7964a0cb080afc9c6d499e
 from time import sleep
 
 #Interaction with server
@@ -159,6 +162,7 @@ if not os.path.exists("/root/selfvpn.conf"):
 #Daemon
 else:
 	while(True):
+<<<<<<< HEAD
 		if(True):
 			client_ovpn = open("/root/{}.ovpn".format(client))
 			selfvpn_conf = open("/root/selfvpn.conf")
@@ -198,3 +202,39 @@ else:
   			f.write("Error:{}".format(format_exc(e)))
   			f.close()
   			
+=======
+
+		client_ovpn = open("/root/{}.ovpn".format(client))
+		selfvpn_conf = open("/root/selfvpn.conf")
+
+		s_cli = client_ovpn.read()
+		s_self = selfvpn_conf.read()
+
+		client_ovpn.close()
+		selfvpn_conf.close()
+
+		ip = get_ip()
+		ip_in_my_config = json.loads(s_self)["ip"]
+		ip_in_config = s_cli.split()[6]
+
+		port_in_my_config = json.loads(s_self)["port"]
+		port_in_config = s_cli.split()[7]
+
+		if ip != ip_in_config:
+			changeconf(client,ip,port_in_config,s_cli)
+
+		if ip_in_config != ip_in_my_config or port_in_config != port_in_my_config:
+			addconf(client,s_cli,s_self)
+			proto = s_cli.split()[4]
+			res = portforwardlib.forwardPort(port_in_config,1194,None,None,True,proto,0,"selfvpn service",True)
+			push(url,s_self)
+			update(url,client,s_cli,s_self)
+
+		if login() and log_status == "logout":
+			log_status = "login"
+		elif not login() and log_status == "login":
+			log_status = "logout"
+			subprocess.run(["sudo", "./starter.sh", "--switch"], stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+			update(url,client,s_cli,s_self)
+		sleep(1)
+>>>>>>> 26df144ea7db2b66ab7964a0cb080afc9c6d499e
