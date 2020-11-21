@@ -22,15 +22,12 @@ sed -i "s/10 120/5 10/" /etc/openvpn/server/server.conf
 echo "[Unit]
 Description=selfvpn-service
 After=network.target
-StartLimitBurst=5
-StartLimitIntervalSec=10
 
 [Service]
 User=root
 Type=simple
 ExecStart=/home/$username/selfvpn-client/client.py
 Restart=always
-RestartSec=1
 
 [Install]
 WantedBy=multi-user.target" > selfvpn.service
